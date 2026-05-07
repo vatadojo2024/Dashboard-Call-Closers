@@ -362,43 +362,39 @@ export function rebalanceDistribution(distribution, changedKey, newValue) {
 }
 
 /**
- * V1.7 — Destravamento do gap pelo investimento no Dojo.
+ * V1.7.1 — Leitura comparativa de magnitudes.
  *
- * NÃO calcula retorno de investimento no sentido financeiro tradicional.
- * Calcula a porção do gap (custo de oportunidade vs cenário institucional)
- * que pode ser destravada pela educação institucional do programa.
+ * Calcula apenas razões matemáticas entre o custo do programa, o gap
+ * projetado entre os cenários comparados (atual vs institucional) e o
+ * patrimônio declarado. NÃO calcula retorno, rendimento, vínculo entre
+ * o programa e qualquer resultado financeiro futuro.
  *
- *   gap.gapAbsolute × applicationPercent  →  unlockedGap
- *
- * O Dojo entrega capacidade. O lead aplica. A combinação destrava o gap.
+ * O slider de "profundidade do estudo" escala o gap principal apenas
+ * para representar a porção do modelo institucional efetivamente
+ * estudada pelo lead, sem qualquer vínculo com resultado financeiro.
  */
-export function calculateDojoUnlock(gap, dojoInputs, horizon, usdBrl2025) {
-  const { programInvestment, applicationPercent } = dojoInputs;
+export function calculateProgramComparison(gap, dojoInputs, patrimony, usdBrl2025) {
+  const { programCost, studyDepth } = dojoInputs;
   const gapAbs = gap?.gapAbsolute ?? 0;
 
-  const unlockedGap    = Math.max(0, gapAbs * applicationPercent);
-  const unlockedGapUSD = usdBrl2025 ? unlockedGap / usdBrl2025 : 0;
-
-  const months = horizon * 12;
-  const days   = horizon * 365;
-  const hours  = days * 24;
+  const projectedGap    = Math.max(0, gapAbs * studyDepth);
+  const projectedGapUSD = usdBrl2025 ? projectedGap / usdBrl2025 : 0;
 
   const result = {
-    unlockedGap,
-    unlockedGapUSD,
-    unlockedPerYear:  horizon ? unlockedGap / horizon : 0,
-    unlockedPerMonth: months  ? unlockedGap / months  : 0,
-    unlockedPerDay:   days    ? unlockedGap / days    : 0,
-    unlockedPerHour:  hours   ? unlockedGap / hours   : 0,
-    roiMultiple: null,
-    paybackDays: null,
+    projectedGap,
+    projectedGapUSD,
+    programAsPercentOfGap:       null,
+    programAsPercentOfPatrimony: null,
+    gapBarWidth:     100,
+    programBarWidth: 0,
   };
 
-  if (programInvestment > 0 && unlockedGap > 0) {
-    result.roiMultiple = unlockedGap / programInvestment;
-    if (result.unlockedPerDay > 0) {
-      result.paybackDays = programInvestment / result.unlockedPerDay;
-    }
+  if (programCost > 0 && projectedGap > 0) {
+    result.programAsPercentOfGap = (programCost / projectedGap) * 100;
+    result.programBarWidth = Math.max(0.5, (programCost / projectedGap) * 100);
+  }
+  if (programCost > 0 && patrimony > 0) {
+    result.programAsPercentOfPatrimony = (programCost / patrimony) * 100;
   }
 
   return result;

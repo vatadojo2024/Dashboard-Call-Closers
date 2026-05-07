@@ -12,7 +12,7 @@ import Magnificent7Chart from './components/Magnificent7Chart.jsx';
 import ProjectionChart from './components/ProjectionChart.jsx';
 import ScenarioCards from './components/ScenarioCards.jsx';
 import VisceralEquivalents from './components/VisceralEquivalents.jsx';
-import DojoInvestmentBlock from './components/DojoInvestmentBlock.jsx';
+import DojoComparisonBlock from './components/DojoComparisonBlock.jsx';
 import Footer from './components/Footer.jsx';
 import { calculateGap, derivePatrimony, deriveDistribution } from './lib/engine.js';
 import { DEFAULT_DISTRIBUTION_VALUES } from './lib/data.js';
@@ -186,9 +186,9 @@ export default function App() {
         </section>
 
         <section id="dojo-block">
-          <DojoInvestmentBlock
+          <DojoComparisonBlock
             gap={gap}
-            horizon={inputs.horizon}
+            patrimony={patrimony}
             isOpen={dojoOpen}
             setIsOpen={setDojoOpen}
           />

@@ -1,48 +1,56 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, GraduationCap, Clock, Calendar, Target, Sparkles } from 'lucide-react';
+import { ChevronDown, GraduationCap, BarChart3, Ruler } from 'lucide-react';
 import CountUp from 'react-countup';
 import InfoTooltip from './InfoTooltip.jsx';
-import { calculateDojoUnlock, formatBRL } from '../lib/engine.js';
+import { calculateProgramComparison, formatBRL } from '../lib/engine.js';
 import { USD_BRL } from '../lib/data.js';
 
 const DOJO_TT = {
-  application: {
-    title: 'Aplicação do conhecimento',
+  studyDepth: {
+    title: 'Profundidade do estudo',
     content:
-`Quanto do que o lead aprende no Dojo, ele efetivamente aplica no posicionamento do próprio capital.
+`O nível em que o lead se aprofunda no estudo do modelo institucional apresentado no programa.
 
-• 100% — aplicação total: lead executa todo o modelo institucional (composição, rebalanceamento, disciplina cambial).
-• 70% — aplicação realista: lead executa o essencial e adapta o resto. Média de quem entra com seriedade.
-• 30% — aplicação mínima: lead aplica só o básico, o que já chega pra mover o ponteiro.
+• 100% — estudo total: lead absorve toda a profundidade do modelo, da macroeconomia ao posicionamento tático.
+• 70% — estudo realista: lead absorve o essencial e contextualiza à própria realidade. Padrão para quem entra com seriedade.
+• 30% — estudo mínimo: lead estuda só o básico do modelo.
 
-Default: 70%. Move o slider durante a apresentação para responder à postura do lead. Lead cético? Move pra 50%. Lead engajado? Move pra 100% e mostra o teto.`,
+Default: 70%. Move o slider durante a apresentação para contextualizar com a postura do lead.
+
+Importante: este percentual representa apenas o nível de estudo educacional, não tem qualquer vínculo com resultado financeiro futuro.`,
   },
-  unlocked: {
-    title: 'O que é o gap destravado',
+  projectedGap: {
+    title: 'Gap projetado entre os cenários',
     content:
-`É a porção do gap total que se destrava pela aplicação do conhecimento institucional do Dojo.
+`A diferença numérica entre os dois cenários comparados na projeção principal:
 
-Cálculo: Gap total × % de aplicação.
-Exemplo: gap de R$ 7M, aplicação 70% → R$ 4,9M destravados.
+• Cenário atual: distribuição declarada do lead.
+• Cenário institucional: composição comparativa (40% S&P + 30% NASDAQ + 20% RF dolarizada + 10% cash).
 
-O Dojo não promete rentabilidade. Entrega capacidade. A combinação de capacidade entregue + aplicação pelo lead resulta no gap destravado.`,
+Esta diferença é escalada pela profundidade de estudo do modelo, representando a porção do gap que dialoga com o nível de educação institucional considerado.
+
+Não é uma promessa de captura. Não é projeção de resultado do programa. É apenas a magnitude da diferença numérica entre os dois cenários simulados.`,
   },
   proportion: {
-    title: 'A proporção que importa',
+    title: 'Proporção do programa',
     content:
-`Para cada R$ 1 investido no programa, quantos reais de gap são destravados pela aplicação do conhecimento.
+`Duas leituras comparativas que ajudam a contextualizar o tamanho do custo do programa:
 
-Não é retorno de investimento no sentido financeiro. É a proporção entre o custo de acesso ao modelo e o valor do gap que esse modelo permite capturar.
+• Em relação ao gap: que percentual do gap projetado o custo do programa representa.
+• Em relação ao patrimônio: que percentual do patrimônio atual do lead o custo do programa representa.
 
-Payback: quantos dias de operação ajustada equivalem ao custo do programa. Se R$ 1.342 são destravados por dia e o programa custa R$ 70k, o programa "se paga" em 52 dias.`,
+Estas são apenas razões matemáticas entre dois números informados. Não representam projeção de retorno, garantia de captura do gap, ou qualquer vínculo entre o custo do programa e resultado financeiro futuro.`,
   },
-  period: {
-    title: 'Destravamento por período',
+  ruler: {
+    title: 'Régua visual',
     content:
-`A mesma decomposição temporal que aparece no gap principal, agora aplicada ao gap destravado pela aplicação.
+`Representação gráfica das duas magnitudes lado a lado:
 
-Por que importa: enquadra o tamanho do destravamento em escalas visualizáveis. R$ 4,9 milhões é abstrato. R$ 56 destravados por hora é palpável — e maior que o custo de muita coisa que o lead gasta sem pensar duas vezes.`,
+• A barra superior (preenchimento total) representa o gap projetado entre os cenários comparados.
+• A barra inferior representa o custo do programa, na mesma escala.
+
+A função desta visualização é puramente comparativa: enxergar a relação de tamanho entre os dois números sem precisar calcular percentuais mentalmente.`,
   },
 };
 
@@ -82,7 +90,7 @@ function CurrencyInput({ value, onChange, placeholder }) {
   );
 }
 
-function ApplicationSlider({ value, onChange }) {
+function StudyDepthSlider({ value, onChange }) {
   const pct = ((value * 100 - 30) / 70) * 100;
   return (
     <div>
@@ -107,42 +115,67 @@ function ApplicationSlider({ value, onChange }) {
         <span>30%</span><span>50%</span><span>70%</span><span>85%</span><span>100%</span>
       </div>
       <p className="text-[11px] text-txt-3 italic mt-2 leading-relaxed">
-        "Quanto do que você aprende, você aplica."
+        "Quanto do modelo institucional você efetivamente estuda."
       </p>
     </div>
   );
 }
 
-function PeriodValue({ icon: Icon, label, value }) {
+function ComparisonRuler({ projectedGap, programCost, gapBarWidth, programBarWidth }) {
   return (
-    <div className="rounded-lg bg-input/70 border border-emerald/15 px-3 py-2 flex items-center justify-between">
-      <span className="flex items-center gap-1.5 text-[11px] text-txt-3 lowercase">
-        {Icon && <Icon className="w-3 h-3 text-emerald/80" />}
-        {label}
-      </span>
-      <span className="font-mono font-semibold tabular-nums text-txt-1 text-[13px]">
-        <CountUp end={value} duration={1.5} separator="." decimals={0} prefix="R$ " preserveValue />
-      </span>
+    <div className="space-y-2.5">
+      {/* Barra do gap */}
+      <div className="flex items-center gap-3">
+        <span className="w-28 md:w-32 text-[12px] text-txt-2 flex-shrink-0">Gap projetado</span>
+        <div className="flex-1 relative h-5 bg-input/80 border border-border rounded-md overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${gapBarWidth}%` }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
+            className="h-full"
+            style={{ background: 'linear-gradient(90deg, rgba(0,214,125,0.40), rgba(0,214,125,0.85))' }}
+          />
+        </div>
+        <span className="font-mono text-[12.5px] text-txt-1 font-semibold w-28 md:w-32 text-right tabular-nums">
+          {formatBRL(projectedGap, true)}
+        </span>
+      </div>
+
+      {/* Barra do programa */}
+      <div className="flex items-center gap-3">
+        <span className="w-28 md:w-32 text-[12px] text-txt-2 flex-shrink-0">Programa</span>
+        <div className="flex-1 relative h-5 bg-input/80 border border-border rounded-md overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${programBarWidth}%` }}
+            transition={{ duration: 1.2, delay: 0.4, ease: 'easeOut' }}
+            className="h-full bg-emerald-300"
+            style={{ background: '#6EE7B7', minWidth: programCost > 0 ? '2px' : 0 }}
+          />
+        </div>
+        <span className="font-mono text-[12.5px] text-txt-1 font-semibold w-28 md:w-32 text-right tabular-nums">
+          {programCost > 0 ? formatBRL(programCost, true) : '—'}
+        </span>
+      </div>
     </div>
   );
 }
 
-export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen }) {
-  const [programInvestment, setProgramInvestment] = useState(0);
-  const [applicationPercent, setApplicationPercent] = useState(0.70);
+export default function DojoComparisonBlock({ gap, patrimony, isOpen, setIsOpen }) {
+  const [programCost, setProgramCost] = useState(0);
+  const [studyDepth, setStudyDepth] = useState(0.70);
 
-  const dojoUnlock = useMemo(
-    () => calculateDojoUnlock(
+  const programComparison = useMemo(
+    () => calculateProgramComparison(
       gap,
-      { programInvestment, applicationPercent },
-      horizon,
+      { programCost, studyDepth },
+      patrimony,
       USD_BRL[2025]
     ),
-    [gap, programInvestment, applicationPercent, horizon]
+    [gap, programCost, studyDepth, patrimony]
   );
 
-  const hasInvestment = programInvestment > 0;
-  const gapAbs = gap?.gapAbsolute ?? 0;
+  const hasCost = programCost > 0;
 
   return (
     <section className="max-w-[1480px] mx-auto px-4 md:px-6 lg:px-8 mt-12 mb-8">
@@ -169,7 +202,7 @@ export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen })
             Investimento no Vata Dojo
           </div>
           <div className="text-[11px] text-txt-3 mt-0.5">
-            {isOpen ? 'Fechar' : 'Calcular destravamento do gap'}
+            {isOpen ? 'Fechar' : 'Leitura comparativa de magnitudes'}
           </div>
         </div>
         <kbd className="hidden md:inline-flex text-[10px] text-txt-4 font-mono px-2 py-1 border border-border rounded">D</kbd>
@@ -201,15 +234,20 @@ export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen })
                 }}
               />
 
-              {/* ZONA 1 — Header pergunta */}
-              <motion.h3
+              {/* ZONA 1 — Header */}
+              <motion.div
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.10, duration: 0.4 }}
-                className="relative text-[11px] md:text-[12px] font-bold uppercase tracking-[0.20em] text-txt-3"
+                className="relative space-y-1"
               >
-                E SE VOCÊ DESTRAVAR TUDO ISSO?
-              </motion.h3>
+                <h3 className="text-[11px] md:text-[12px] font-bold uppercase tracking-[0.20em] text-txt-3">
+                  LEITURA COMPARATIVA
+                </h3>
+                <p className="text-[12px] text-txt-3">
+                  Magnitude do programa em relação aos cenários
+                </p>
+              </motion.div>
 
               {/* ZONA 2 — Inputs */}
               <motion.div
@@ -220,11 +258,11 @@ export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen })
               >
                 <div>
                   <label className="block text-[11px] tracking-[0.18em] uppercase text-txt-3 mb-2 font-semibold">
-                    Investimento no programa
+                    Custo do programa
                   </label>
                   <CurrencyInput
-                    value={programInvestment}
-                    onChange={setProgramInvestment}
+                    value={programCost}
+                    onChange={setProgramCost}
                     placeholder="0"
                   />
                   <p className="text-[11px] text-txt-4 mt-2">
@@ -234,16 +272,16 @@ export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen })
 
                 <div>
                   <label className="flex items-center gap-1.5 text-[11px] tracking-[0.18em] uppercase text-txt-3 mb-2 font-semibold">
-                    Aplicação do conhecimento
-                    <InfoTooltip title={DOJO_TT.application.title} content={DOJO_TT.application.content} position="bottom" />
+                    Profundidade do estudo
+                    <InfoTooltip title={DOJO_TT.studyDepth.title} content={DOJO_TT.studyDepth.content} position="bottom" />
                   </label>
-                  <ApplicationSlider value={applicationPercent} onChange={setApplicationPercent} />
+                  <StudyDepthSlider value={studyDepth} onChange={setStudyDepth} />
                 </div>
               </motion.div>
 
               <div className="relative h-px bg-gradient-to-r from-transparent via-emerald/20 to-transparent" />
 
-              {/* ZONA 3 — Gap destravado (número herói) */}
+              {/* ZONA 3 — Gap projetado entre os cenários (número herói) */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -251,14 +289,11 @@ export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen })
                 className="relative text-center"
               >
                 <div className="inline-flex items-center gap-2 text-[10.5px] md:text-[11px] uppercase tracking-[0.20em] text-txt-3 font-bold mb-3">
-                  <Sparkles className="w-3 h-3 text-emerald" />
-                  GAP DESTRAVADO
-                  <InfoTooltip title={DOJO_TT.unlocked.title} content={DOJO_TT.unlocked.content} position="bottom" />
+                  GAP PROJETADO ENTRE OS CENÁRIOS
+                  <InfoTooltip title={DOJO_TT.projectedGap.title} content={DOJO_TT.projectedGap.content} position="bottom" />
                 </div>
 
-                <motion.div
-                  animate={{ scale: [1, 1.004, 1] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                <div
                   className="font-mono font-extrabold tabular-nums text-emerald leading-none break-all"
                   style={{
                     fontSize: 'clamp(36px, 5.5vw, 56px)',
@@ -267,18 +302,18 @@ export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen })
                   }}
                 >
                   <CountUp
-                    end={dojoUnlock.unlockedGap}
+                    end={programComparison.projectedGap}
                     duration={2.0}
                     separator="."
                     decimals={0}
                     prefix="R$ "
                     preserveValue
                   />
-                </motion.div>
+                </div>
 
                 <div className="font-mono text-base md:text-lg text-emerald/70 tabular-nums mt-2">
                   <CountUp
-                    end={dojoUnlock.unlockedGapUSD}
+                    end={programComparison.projectedGapUSD}
                     duration={2.0}
                     separator=","
                     decimals={0}
@@ -286,14 +321,14 @@ export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen })
                     preserveValue
                   />
                 </div>
-                <div className="text-[11px] text-txt-3 font-mono mt-2">
-                  {Math.round(applicationPercent * 100)}% × {formatBRL(gapAbs, true)}
+                <div className="text-[11px] text-txt-3 mt-2">
+                  diferença comparada entre cenário atual e cenário institucional
                 </div>
               </motion.div>
 
               <div className="relative h-px bg-gradient-to-r from-transparent via-emerald/20 to-transparent" />
 
-              {/* ZONA 4 — Proporção (2 cards) */}
+              {/* ZONA 4 — Proporção do programa */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -301,54 +336,63 @@ export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen })
                 className="relative"
               >
                 <div className="inline-flex items-center gap-2 text-[10.5px] uppercase tracking-[0.18em] text-txt-3 font-bold mb-3">
-                  PROPORÇÃO ENTRE INVESTIMENTO E ACESSO
+                  <BarChart3 className="w-3 h-3 text-emerald" />
+                  PROPORÇÃO DO PROGRAMA
                   <InfoTooltip title={DOJO_TT.proportion.title} content={DOJO_TT.proportion.content} position="bottom" />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-input/60 border border-emerald/25 px-4 py-3.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-txt-3 font-semibold mb-1.5 flex items-center gap-1.5">
-                      <Target className="w-3 h-3 text-emerald" /> Para cada R$ 1 investido
+                  <div className="rounded-xl bg-input/60 border border-emerald/25 px-4 py-4">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-txt-3 font-semibold mb-2">
+                      EM RELAÇÃO AO GAP
                     </div>
-                    <div className="font-mono text-xl md:text-2xl font-extrabold text-txt-1 tabular-nums leading-none">
-                      {hasInvestment ? (
-                        <>
-                          R$ <CountUp end={dojoUnlock.roiMultiple} duration={1.6} decimals={0} preserveValue />
-                          <span className="text-emerald"> destravados</span>
-                        </>
+                    <div className="font-mono text-3xl md:text-4xl font-extrabold text-emerald tabular-nums leading-none">
+                      {programComparison.programAsPercentOfGap !== null ? (
+                        <CountUp
+                          end={programComparison.programAsPercentOfGap}
+                          duration={1.5}
+                          decimals={1}
+                          suffix="%"
+                          preserveValue
+                        />
                       ) : (
-                        <span className="text-txt-3">R$ — destravados</span>
+                        <span className="text-txt-3">—</span>
                       )}
                     </div>
+                    <div className="text-[12px] text-txt-3 mt-2">do gap projetado</div>
                   </div>
 
-                  <div className="rounded-xl bg-input/60 border border-emerald/25 px-4 py-3.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-txt-3 font-semibold mb-1.5 flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-emerald" /> Payback do programa
+                  <div className="rounded-xl bg-input/60 border border-emerald/25 px-4 py-4">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-txt-3 font-semibold mb-2">
+                      EM RELAÇÃO AO PATRIMÔNIO
                     </div>
-                    <div className="font-mono text-xl md:text-2xl font-extrabold text-txt-1 tabular-nums leading-none">
-                      {hasInvestment && dojoUnlock.paybackDays != null ? (
-                        <>
-                          <CountUp end={dojoUnlock.paybackDays} duration={1.6} decimals={1} preserveValue /> <span className="text-emerald">dias</span>
-                        </>
+                    <div className="font-mono text-3xl md:text-4xl font-extrabold text-emerald tabular-nums leading-none">
+                      {programComparison.programAsPercentOfPatrimony !== null ? (
+                        <CountUp
+                          end={programComparison.programAsPercentOfPatrimony}
+                          duration={1.5}
+                          decimals={1}
+                          suffix="%"
+                          preserveValue
+                        />
                       ) : (
-                        <span className="text-txt-3">— dias</span>
+                        <span className="text-txt-3">—</span>
                       )}
                     </div>
-                    <div className="text-[11px] text-txt-3 mt-1.5">de operação ajustada</div>
+                    <div className="text-[12px] text-txt-3 mt-2">do seu patrimônio atual</div>
                   </div>
                 </div>
 
-                {!hasInvestment && (
-                  <div className="text-[12px] text-emerald/80 italic mt-3 text-center md:text-left">
-                    Digite o valor do programa acima para ver a proporção.
+                {!hasCost && (
+                  <div className="text-[12px] text-emerald/80 italic mt-3">
+                    Insira o custo do programa para visualizar a proporção.
                   </div>
                 )}
               </motion.div>
 
               <div className="relative h-px bg-gradient-to-r from-transparent via-emerald/20 to-transparent" />
 
-              {/* ZONA 5 — Decomposição por período */}
+              {/* ZONA 5 — Régua visual */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -356,19 +400,19 @@ export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen })
                 className="relative"
               >
                 <div className="inline-flex items-center gap-2 text-[10.5px] uppercase tracking-[0.18em] text-txt-3 font-bold mb-3">
-                  <Calendar className="w-3 h-3 text-emerald" />
-                  DESTRAVAMENTO POR PERÍODO
-                  <InfoTooltip title={DOJO_TT.period.title} content={DOJO_TT.period.content} position="top" />
+                  <Ruler className="w-3 h-3 text-emerald" />
+                  RÉGUA VISUAL
+                  <InfoTooltip title={DOJO_TT.ruler.title} content={DOJO_TT.ruler.content} position="top" />
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                  <PeriodValue label="por ano"  value={dojoUnlock.unlockedPerYear}  />
-                  <PeriodValue label="por mês"  value={dojoUnlock.unlockedPerMonth} />
-                  <PeriodValue label="por dia"  value={dojoUnlock.unlockedPerDay}   />
-                  <PeriodValue label="por hora" value={dojoUnlock.unlockedPerHour}  />
-                </div>
+                <ComparisonRuler
+                  projectedGap={programComparison.projectedGap}
+                  programCost={programCost}
+                  gapBarWidth={programComparison.gapBarWidth}
+                  programBarWidth={programComparison.programBarWidth}
+                />
               </motion.div>
 
-              {/* ZONA 6 — Tagline final */}
+              {/* ZONA 6 — Tagline final + Disclaimer */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -380,9 +424,18 @@ export default function DojoInvestmentBlock({ gap, horizon, isOpen, setIsOpen })
                                 text-[11px] md:text-[12px] font-bold uppercase
                                 tracking-[0.16em] text-emerald shadow-glow">
                   Não é o custo do programa.
-                  <span className="text-emerald-300">É o custo de não fazer parte dele.</span>
+                  <span className="text-emerald-300">É a magnitude do que você acabou de ver.</span>
                 </div>
               </motion.div>
+
+              <p className="relative text-[11px] text-txt-3 italic leading-relaxed pt-2 max-w-3xl mx-auto text-center">
+                Os números apresentados neste bloco são leituras comparativas entre magnitudes
+                informadas (custo do programa, gap simulado e patrimônio declarado). Não constituem
+                projeção de retorno, promessa de ganho, ou qualquer vínculo entre o programa
+                educacional e resultados financeiros futuros do lead. O Vata Dojo é uma empresa de
+                educação financeira; não atua como instituição financeira, corretora ou consultoria
+                de investimentos. Rentabilidade passada não é garantia de rentabilidade futura.
+              </p>
             </motion.div>
           </motion.div>
         )}
