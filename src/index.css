@@ -1,0 +1,233 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --base: #0B0F1A;
+    --surface: #131826;
+    --card: #1A2030;
+    --card-elev: #222B40;
+    --input: #0F1422;
+    --border: #2A3145;
+    --border-strong: #3D4660;
+
+    --txt-1: #FFFFFF;
+    --txt-2: #E2E8F0;
+    --txt-3: #94A3B8;
+    --txt-4: #64748B;
+
+    --emerald: #00D67D;
+    --emerald-2: #10B981;
+    --cyan: #06B6D4;
+    --sky: #0EA5E9;
+    --violet: #8B5CF6;
+    --amber: #FBBF24;
+    --rose: #F87171;
+    --crimson: #EF4444;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 18% -10%, rgba(0, 214, 125, 0.08), transparent 42%),
+      radial-gradient(circle at 92% 6%, rgba(6, 182, 212, 0.07), transparent 42%),
+      var(--base);
+    color: var(--txt-1);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-width: 320px;
+  }
+
+  .number,
+  .recharts-cartesian-axis-tick text {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ===== Sliders ===== */
+  input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+    height: 22px;
+  }
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 6px;
+    background: linear-gradient(90deg, var(--emerald) var(--val, 0%), var(--border) var(--val, 0%));
+    border-radius: 999px;
+  }
+  input[type='range']::-moz-range-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+  }
+  input[type='range']::-moz-range-progress {
+    height: 6px;
+    background: var(--emerald);
+    border-radius: 999px;
+  }
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    margin-top: -6px;
+    border: 2px solid var(--emerald);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 0 4px rgba(0, 214, 125, 0.0);
+    transition: box-shadow 200ms ease, transform 150ms ease;
+  }
+  input[type='range']::-webkit-slider-thumb:hover {
+    transform: scale(1.18);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6), 0 0 0 8px rgba(0, 214, 125, 0.15);
+  }
+  input[type='range']::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid var(--emerald);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+  }
+
+  /* ===== Scrollbar ===== */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+    border: 2px solid var(--base);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--txt-4);
+  }
+
+  /* ===== Recharts dark theme ===== */
+  .recharts-cartesian-axis-tick text {
+    fill: var(--txt-3);
+  }
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line {
+    stroke: var(--border);
+    stroke-opacity: 0.6;
+  }
+  .recharts-tooltip-wrapper {
+    outline: none !important;
+  }
+  .recharts-default-tooltip {
+    background: rgba(15, 20, 34, 0.96) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(8px);
+  }
+  .recharts-tooltip-label {
+    color: var(--txt-3) !important;
+    font-size: 11px !important;
+    margin-bottom: 6px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .recharts-tooltip-item {
+    color: var(--txt-1) !important;
+    font-size: 12px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+  .recharts-legend-item-text {
+    color: var(--txt-2) !important;
+    font-size: 12px !important;
+  }
+
+  [id^='zone-'] {
+    scroll-margin-top: 90px;
+  }
+
+  kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--txt-2);
+  }
+}
+
+@layer components {
+  .card-base {
+    background:
+      linear-gradient(165deg, rgba(34, 43, 64, 0.55), rgba(26, 32, 48, 0.55)),
+      var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 6px 24px -10px rgba(0, 0, 0, 0.5);
+  }
+  .card-base:hover {
+    border-color: var(--border-strong);
+  }
+
+  .card-glow {
+    background:
+      linear-gradient(165deg, rgba(0, 214, 125, 0.08), rgba(6, 182, 212, 0.04)),
+      var(--card);
+    border: 1px solid rgba(0, 214, 125, 0.30);
+    border-radius: 16px;
+    box-shadow:
+      0 0 0 1px rgba(0, 214, 125, 0.15),
+      0 12px 40px -12px rgba(0, 214, 125, 0.30),
+      0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  }
+
+  .card-rose {
+    background:
+      linear-gradient(165deg, rgba(248, 113, 113, 0.06), rgba(248, 113, 113, 0.02)),
+      var(--card);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    border-radius: 16px;
+    box-shadow:
+      0 0 0 1px rgba(248, 113, 113, 0.15),
+      0 12px 40px -12px rgba(248, 113, 113, 0.30);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .input-base {
+    background: var(--input);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 180ms ease;
+  }
+  .input-base:hover {
+    border-color: var(--border-strong);
+  }
+  .input-base:focus-within {
+    border-color: var(--emerald);
+    box-shadow: 0 0 0 4px rgba(0, 214, 125, 0.10);
+  }
+}

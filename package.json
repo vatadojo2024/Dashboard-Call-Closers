@@ -1,0 +1,30 @@
+{
+  "name": "vata-dashboard-vendas",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Dashboard de Vendas Vata Dojo — ferramenta interativa para a Call 2 (Prognóstico).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173",
+    "start": "vite"
+  },
+  "dependencies": {
+    "framer-motion": "^11.5.4",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
+    "lucide-react": "^0.453.0",
+    "react": "^18.3.1",
+    "react-countup": "^6.5.3",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.13.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.2",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "vite": "^5.4.8"
+  }
+}
