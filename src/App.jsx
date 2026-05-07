@@ -12,6 +12,7 @@ import Magnificent7Chart from './components/Magnificent7Chart.jsx';
 import ProjectionChart from './components/ProjectionChart.jsx';
 import ScenarioCards from './components/ScenarioCards.jsx';
 import VisceralEquivalents from './components/VisceralEquivalents.jsx';
+import DojoInvestmentBlock from './components/DojoInvestmentBlock.jsx';
 import Footer from './components/Footer.jsx';
 import { calculateGap, derivePatrimony, deriveDistribution } from './lib/engine.js';
 import { DEFAULT_DISTRIBUTION_VALUES } from './lib/data.js';
@@ -30,6 +31,7 @@ export default function App() {
   const [inputs, setInputs] = useState(DEFAULT_INPUTS);
   const [fixedScenario, setFixedScenario] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [dojoOpen, setDojoOpen] = useState(false);
 
   const patrimony = useMemo(
     () => derivePatrimony(inputs.distributionValues),
@@ -84,6 +86,17 @@ export default function App() {
       if (e.key === '2') document.getElementById('zone-2')?.scrollIntoView({ behavior: 'smooth' });
       if (e.key === '3') document.getElementById('zone-3')?.scrollIntoView({ behavior: 'smooth' });
       if (e.key === 'r' || e.key === 'R') setInputs(DEFAULT_INPUTS);
+      if (e.key === 'd' || e.key === 'D') {
+        setDojoOpen((o) => {
+          const next = !o;
+          if (next) {
+            setTimeout(() => {
+              document.getElementById('dojo-block')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 80);
+          }
+          return next;
+        });
+      }
       if (e.key === 'f' || e.key === 'F') {
         if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
         else document.exitFullscreen?.();
@@ -170,6 +183,15 @@ export default function App() {
             <ScenarioCards gap={gap} inputs={inputs} patrimony={patrimony} />
             <VisceralEquivalents gap={gap} inputs={inputs} patrimony={patrimony} />
           </div>
+        </section>
+
+        <section id="dojo-block">
+          <DojoInvestmentBlock
+            gap={gap}
+            horizon={inputs.horizon}
+            isOpen={dojoOpen}
+            setIsOpen={setDojoOpen}
+          />
         </section>
       </main>
 

@@ -7,6 +7,8 @@ import {
 import {
   derivePatrimony, deriveDistribution, formatBRL,
 } from '../lib/engine.js';
+import InfoTooltip from './InfoTooltip.jsx';
+import { TT } from '../lib/tooltips.js';
 
 const PREMISES = [
   { id: 'historica',    label: 'Histórica',    icon: TrendingUp,   hint: '100% retornos médios' },
@@ -14,19 +16,37 @@ const PREMISES = [
   { id: 'pessimista',   label: 'Pessimista',   icon: TrendingDown, hint: '50% retornos médios' },
 ];
 
+const PREMISE_DESCRIPTIONS = {
+  historica: {
+    title: 'HISTÓRICA',
+    body: 'Projetamos o futuro usando exatamente os retornos médios reais dos últimos 10 anos. Sem desconto, sem otimismo. É o que aconteceu de fato no mundo entre 2016 e 2025.',
+    example: 'Exemplo: o S&P 500 em real rendeu 19% ao ano nesse período. A premissa histórica projeta os próximos anos com esses mesmos 19% ao ano.',
+  },
+  conservadora: {
+    title: 'CONSERVADORA',
+    body: 'Aplicamos um corte de 30% sobre todos os retornos históricos. Assume que os próximos anos serão piores que a década passada. É o cenário "vamos descontar o otimismo".',
+    example: 'No exemplo: 19% × 0,7 = 13,3% ao ano para o S&P em real. Mesmo com esse corte, o gap permanece relevante.',
+  },
+  pessimista: {
+    title: 'PESSIMISTA',
+    body: 'Cortamos pela metade. Assume que os próximos anos terão metade do retorno histórico — cenário de stress severo, equivalente a uma década perdida.',
+    example: 'No exemplo: 19% × 0,5 = 9,5% ao ano. É o teste de resistência da tese: mesmo no pior caso plausível, posicionamento institucional ainda gera gap relevante contra a inação.',
+  },
+};
+
 const DIST_ITEMS = [
-  { key: 'rfBR',       label: 'Renda Fixa BR',          hint: 'CDB, LCI, LCA, Tesouro',  color: '#94A3B8', icon: Landmark   },
-  { key: 'rvBR',       label: 'Renda Variável BR',      hint: 'Ações, FIIs, fundos',     color: '#06B6D4', icon: BarChart3  },
-  { key: 'imoveis',    label: 'Imóveis BR',             hint: 'FIIs imobiliários reais', color: '#FBBF24', icon: Building2  },
-  { key: 'dolarizado', label: 'Dolarizado / Exterior',  hint: 'BDRs, ETFs, exterior',    color: '#00D67D', icon: Globe      },
-  { key: 'outros',     label: 'Outros',                 hint: 'Cripto, alternativos',    color: '#8B5CF6', icon: Layers     },
+  { key: 'rfBR',       label: 'Renda Fixa BR',          hint: 'CDB, LCI, LCA, Tesouro',  color: '#94A3B8', icon: Landmark,   tt: 'rfBR'       },
+  { key: 'rvBR',       label: 'Renda Variável BR',      hint: 'Ações, FIIs, fundos',     color: '#06B6D4', icon: BarChart3,  tt: 'rvBR'       },
+  { key: 'imoveis',    label: 'Imóveis BR',             hint: 'FIIs imobiliários reais', color: '#FBBF24', icon: Building2,  tt: 'imoveis'    },
+  { key: 'dolarizado', label: 'Dolarizado / Exterior',  hint: 'BDRs, ETFs, exterior',    color: '#00D67D', icon: Globe,      tt: 'dolarizado' },
+  { key: 'outros',     label: 'Outros',                 hint: 'Cripto, alternativos',    color: '#8B5CF6', icon: Layers,     tt: 'outros'     },
 ];
 
 function formatNumberInput(v) {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(v || 0);
 }
 
-function CurrencyInput({ icon: Icon, label, value, onChange, hint, accent = 'emerald', size = 'md' }) {
+function CurrencyInput({ icon: Icon, label, value, onChange, hint, accent = 'emerald', size = 'md', tooltip }) {
   const [str, setStr] = useState(formatNumberInput(value));
   const [focused, setFocused] = useState(false);
 
@@ -60,6 +80,9 @@ function CurrencyInput({ icon: Icon, label, value, onChange, hint, accent = 'eme
             </span>
           )}
           {label}
+          {tooltip && (
+            <InfoTooltip title={tooltip.title} content={tooltip.content} position="bottom" />
+          )}
         </label>
       )}
       <div className="input-base flex items-baseline gap-3 px-4 py-3">
@@ -104,7 +127,12 @@ function CompactCurrencyRow({ item, value, onChange }) {
         <Icon className="w-3.5 h-3.5" style={{ color: item.color }} />
       </span>
       <div className="min-w-0">
-        <div className="text-[12px] font-medium text-txt-1 leading-tight">{item.label}</div>
+        <div className="flex items-center gap-1.5 text-[12px] font-medium text-txt-1 leading-tight">
+          <span>{item.label}</span>
+          {item.tt && TT[item.tt] && (
+            <InfoTooltip title={TT[item.tt].title} content={TT[item.tt].content} position="right" />
+          )}
+        </div>
         <div className="text-[10px] text-txt-4 leading-tight mt-0.5">{item.hint}</div>
       </div>
       <div className="flex items-baseline gap-2 min-w-[140px] justify-end">
@@ -175,6 +203,7 @@ function HorizonSlider({ value, onChange }) {
 }
 
 function PremiseSelect({ value, onChange }) {
+  const desc = PREMISE_DESCRIPTIONS[value] ?? PREMISE_DESCRIPTIONS.historica;
   return (
     <div>
       <label className="block text-[11px] tracking-[0.18em] uppercase text-txt-3 mb-2 font-semibold">
@@ -202,6 +231,24 @@ function PremiseSelect({ value, onChange }) {
           );
         })}
       </div>
+
+      <motion.div
+        key={value}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="mt-3 rounded-xl border border-border bg-input/60 px-3.5 py-3"
+      >
+        <div className="text-[10px] tracking-[0.18em] text-emerald font-bold mb-1.5">
+          {desc.title}
+        </div>
+        <p className="text-[11.5px] text-txt-2 leading-relaxed">
+          {desc.body}
+        </p>
+        <p className="text-[11px] text-txt-3 italic leading-relaxed mt-2">
+          {desc.example}
+        </p>
+      </motion.div>
     </div>
   );
 }
@@ -242,6 +289,7 @@ function AgeInput({ value, onChange }) {
         </span>
         Idade do lead
         <span className="text-[9px] tracking-normal text-txt-4 font-normal lowercase">(opcional)</span>
+        <InfoTooltip title={TT.age.title} content={TT.age.content} position="bottom" />
       </label>
       <div className="input-base flex items-baseline gap-3 px-4 py-3">
         <input
@@ -292,6 +340,7 @@ export default function ControlPanel({ inputs, setInputs, patrimony, distributio
               onChange={(v) => setInputs((p) => ({ ...p, monthlyContribution: v }))}
               hint={`${formatBRL(inputs.monthlyContribution * 12, true)} por ano`}
               accent="cyan"
+              tooltip={TT.monthlyContribution}
             />
             <AgeInput
               value={inputs.leadAge}

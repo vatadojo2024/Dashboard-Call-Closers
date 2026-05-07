@@ -8,6 +8,8 @@ import {
 import { formatBRL } from '../lib/engine.js';
 import { USD_BRL } from '../lib/data.js';
 import GapGrowthChart from './GapGrowthChart.jsx';
+import InfoTooltip from './InfoTooltip.jsx';
+import { TT } from '../lib/tooltips.js';
 
 const PASSIVE_RATE = 0.04; // regra dos 4% a.a.
 
@@ -99,6 +101,7 @@ function ScenarioCard({
   growthHorizon,
   growthColor,
   growthLabel,
+  headerTooltip,
 }) {
   return (
     <motion.div
@@ -112,7 +115,12 @@ function ScenarioCard({
         {/* 1. Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
-            <div className="text-[11px] tracking-[0.22em] uppercase text-txt-3 font-bold mb-1">{label}</div>
+            <div className="text-[11px] tracking-[0.22em] uppercase text-txt-3 font-bold mb-1 flex items-center gap-1.5">
+              <span>{label}</span>
+              {headerTooltip && (
+                <InfoTooltip title={headerTooltip.title} content={headerTooltip.content} position="bottom" />
+              )}
+            </div>
             <div className="text-[12px] text-txt-4">{sublabel}</div>
           </div>
           <div
@@ -249,6 +257,7 @@ export default function ScenarioCards({ gap, inputs, patrimony }) {
         icon={Trophy}
         label="POSICIONADO COMO OPERADOR"
         sublabel="Cenário institucional"
+        headerTooltip={TT.institutional}
         color="#00D67D"
         accent="card-glow"
         brl={gap.finalInstitutional}

@@ -8,6 +8,8 @@ import { Pin } from 'lucide-react';
 import ChartCard from './ChartCard.jsx';
 import { formatBRL, formatUSD } from '../lib/engine.js';
 import { USD_BRL } from '../lib/data.js';
+import InfoTooltip from './InfoTooltip.jsx';
+import { TT } from '../lib/tooltips.js';
 
 const RETIREMENT_MARKERS = [60, 65, 70];
 
@@ -209,6 +211,7 @@ export default function ProjectionChart({ inputs, gap, currencyView, fixedScenar
           ? `Eixo X = sua idade · você tem ${inputs.leadAge} anos hoje · em ${inputs.horizon} anos terá ${inputs.leadAge + inputs.horizon}`
           : 'A área entre as duas curvas é o GAP · recálculo em tempo real conforme você ajusta os inputs'
       }
+      rightAction={<InfoTooltip title={TT.projection.title} content={TT.projection.content} position="bottom" size="md" />}
     >
       {currencyView === 'side-by-side' ? (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

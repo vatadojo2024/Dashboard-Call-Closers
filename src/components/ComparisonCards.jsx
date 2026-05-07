@@ -7,6 +7,8 @@ import {
 import ChartCard from './ChartCard.jsx';
 import { COMPARISON_CARDS } from '../lib/data.js';
 import { formatPercent } from '../lib/engine.js';
+import InfoTooltip from './InfoTooltip.jsx';
+import { TT } from '../lib/tooltips.js';
 
 const ICON_MAP = {
   Landmark, ScrollText, TrendingUp, Building2,
@@ -52,6 +54,12 @@ export default function ComparisonCards() {
     <ChartCard
       title="Ranking comparativo de classes — sempre em USD"
       subtitle="A régua institucional. CAGR em USD acumulado 10 anos · volatilidade anualizada · ranking do melhor para o pior"
+      rightAction={
+        <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.14em] text-txt-3">
+          <span className="inline-flex items-center gap-1.5">CAGR <InfoTooltip title={TT.cagr.title} content={TT.cagr.content} position="bottom" /></span>
+          <span className="inline-flex items-center gap-1.5">Vol USD <InfoTooltip title={TT.volUSD.title} content={TT.volUSD.content} position="bottom" /></span>
+        </div>
+      }
       footer={
         <p className="text-[12px] text-txt-3 italic leading-relaxed">
           "Renda fixa BR aparece na metade-baixa do ranking USD — com volatilidade comparável a ações.

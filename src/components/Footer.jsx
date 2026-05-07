@@ -29,6 +29,8 @@ export default function Footer() {
             <span className="text-txt-4 mx-1">fullscreen</span>
             <kbd>R</kbd>
             <span className="text-txt-4 mx-1">reset</span>
+            <kbd>D</kbd>
+            <span className="text-txt-4 mx-1">Dojo</span>
             <kbd>Ctrl+P</kbd>
             <span className="text-txt-4">PDF</span>
           </span>

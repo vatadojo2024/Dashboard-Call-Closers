@@ -7,15 +7,18 @@ import { Sparkles, AlertTriangle } from 'lucide-react';
 import ChartCard from './ChartCard.jsx';
 import OperatorTooltip from './OperatorTooltip.jsx';
 import { buildRfBRinUSD, formatBRL, formatUSD } from '../lib/engine.js';
+import InfoTooltip from './InfoTooltip.jsx';
+import { TT } from '../lib/tooltips.js';
 
-function SideStat({ title, main, sub, color, warn }) {
+function SideStat({ title, main, sub, color, warn, tooltip }) {
   return (
     <div
       className="rounded-2xl p-5 border border-border bg-input"
       style={{ borderTop: `2px solid ${color}` }}
     >
-      <div className="text-[10px] tracking-[0.18em] uppercase text-txt-4 mb-2 font-semibold">
-        {title}
+      <div className="text-[10px] tracking-[0.18em] uppercase text-txt-4 mb-2 font-semibold flex items-center gap-1.5">
+        <span>{title}</span>
+        {tooltip && <InfoTooltip title={tooltip.title} content={tooltip.content} position="left" />}
       </div>
       <div className="text-[28px] font-mono font-bold tabular-nums leading-none" style={{ color }}>
         {main}
@@ -114,8 +117,8 @@ export default function FixedIncomeBRChart() {
 
         <div className="space-y-3">
           <SideStat title="BRL nominal"                            main="+147%" sub="9,5% a.a." color="#10B981" />
-          <SideStat title="BRL real (− Índice Vata)"               main="+35%"  sub="3,1% a.a." color="#94A3B8" warn="Vs +49% pelo IPCA oficial" />
-          <SideStat title="USD"                                    main="+77%"  sub="5,9% a.a." color="#F87171" warn="Volatilidade ~17% ao ano" />
+          <SideStat title="BRL real (− Índice Vata)"               main="+35%"  sub="3,1% a.a." color="#94A3B8" warn="Vs +49% pelo IPCA oficial" tooltip={TT.rfBRrealBRL} />
+          <SideStat title="USD"                                    main="+77%"  sub="5,9% a.a." color="#F87171" warn="Volatilidade ~17% ao ano" tooltip={TT.rfBRusd} />
         </div>
       </div>
     </ChartCard>

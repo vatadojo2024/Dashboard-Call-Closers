@@ -361,6 +361,49 @@ export function rebalanceDistribution(distribution, changedKey, newValue) {
   return next;
 }
 
+/**
+ * V1.7 — Destravamento do gap pelo investimento no Dojo.
+ *
+ * NÃO calcula retorno de investimento no sentido financeiro tradicional.
+ * Calcula a porção do gap (custo de oportunidade vs cenário institucional)
+ * que pode ser destravada pela educação institucional do programa.
+ *
+ *   gap.gapAbsolute × applicationPercent  →  unlockedGap
+ *
+ * O Dojo entrega capacidade. O lead aplica. A combinação destrava o gap.
+ */
+export function calculateDojoUnlock(gap, dojoInputs, horizon, usdBrl2025) {
+  const { programInvestment, applicationPercent } = dojoInputs;
+  const gapAbs = gap?.gapAbsolute ?? 0;
+
+  const unlockedGap    = Math.max(0, gapAbs * applicationPercent);
+  const unlockedGapUSD = usdBrl2025 ? unlockedGap / usdBrl2025 : 0;
+
+  const months = horizon * 12;
+  const days   = horizon * 365;
+  const hours  = days * 24;
+
+  const result = {
+    unlockedGap,
+    unlockedGapUSD,
+    unlockedPerYear:  horizon ? unlockedGap / horizon : 0,
+    unlockedPerMonth: months  ? unlockedGap / months  : 0,
+    unlockedPerDay:   days    ? unlockedGap / days    : 0,
+    unlockedPerHour:  hours   ? unlockedGap / hours   : 0,
+    roiMultiple: null,
+    paybackDays: null,
+  };
+
+  if (programInvestment > 0 && unlockedGap > 0) {
+    result.roiMultiple = unlockedGap / programInvestment;
+    if (result.unlockedPerDay > 0) {
+      result.paybackDays = programInvestment / result.unlockedPerDay;
+    }
+  }
+
+  return result;
+}
+
 export function makeYearMap(years, fn) {
   const m = {};
   years.forEach(y => { m[y] = fn(y); });

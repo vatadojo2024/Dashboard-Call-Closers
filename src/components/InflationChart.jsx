@@ -4,6 +4,8 @@ import {
 } from 'recharts';
 import ChartCard from './ChartCard.jsx';
 import { IPCA_GRUPOS } from '../lib/data.js';
+import InfoTooltip from './InfoTooltip.jsx';
+import { TT } from '../lib/tooltips.js';
 
 function colorFor(tipo) {
   if (tipo === 'vata')    return '#EF4444'; // crimson saturado — protagonista
@@ -23,6 +25,7 @@ export default function InflationChart() {
     <ChartCard
       title="Inflação que o governo conta vs. inflação que você paga"
       subtitle="Índice Vata = cesta real do HNWI (educação + saúde + alimentação + habitação + combustíveis + lazer)"
+      rightAction={<InfoTooltip title={TT.vata.title} content={TT.vata.content} position="bottom" size="md" />}
       footer={
         <p className="text-[13px] text-txt-2 italic leading-relaxed max-w-3xl">
           "O governo te entrega 65%. A inflação que você efetivamente paga é 82%. Se sua renda fixa rendeu

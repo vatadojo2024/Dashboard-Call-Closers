@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import CountUp from 'react-countup';
 import { Target, AlertTriangle, Pin } from 'lucide-react';
 import { brlToUsd, formatBRL, formatUSD } from '../lib/engine.js';
+import InfoTooltip from './InfoTooltip.jsx';
+import { TT } from '../lib/tooltips.js';
 
 function MiniValue({ label, value, color }) {
   return (
@@ -152,7 +154,10 @@ export default function HeroNumbers({ inputs, gap, fixedScenario }) {
             <div className="flex items-center justify-center gap-5 mb-6">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent to-rose/40 max-w-[300px]" />
               <Target className="w-5 h-5 text-rose" />
-              <span className="text-[14px] tracking-[0.32em] text-rose font-bold font-mono">GAP</span>
+              <span className="text-[14px] tracking-[0.32em] text-rose font-bold font-mono inline-flex items-center gap-2">
+                GAP
+                <span className="text-rose/70"><InfoTooltip title={TT.gap.title} content={TT.gap.content} position="bottom" variant="prominent" /></span>
+              </span>
               <div className="h-px flex-1 bg-gradient-to-l from-transparent to-rose/40 max-w-[300px]" />
             </div>
 

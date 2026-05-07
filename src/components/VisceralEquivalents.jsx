@@ -6,6 +6,8 @@ import {
   Banknote, Sunset, School, Coins, Sailboat,
 } from 'lucide-react';
 import { visceralEquivalents, formatNumber } from '../lib/engine.js';
+import InfoTooltip from './InfoTooltip.jsx';
+import { TT } from '../lib/tooltips.js';
 
 const ICON_MAP = {
   Building2, Briefcase, GraduationCap, Plane, Car,
@@ -49,7 +51,12 @@ function ItemCard({ item, index }) {
             />
           </div>
         )}
-        <div className="text-[14px] text-txt-3 mt-1.5 leading-snug">{item.label}</div>
+        <div className="text-[14px] text-txt-3 mt-1.5 leading-snug flex items-center gap-1.5">
+          <span>{item.label}</span>
+          {(item.id === 'passiveIncome' || item.id === 'lifetimeAllowance') && (
+            <InfoTooltip title={TT.passiveIncome.title} content={TT.passiveIncome.content} position="top" />
+          )}
+        </div>
       </div>
     </motion.div>
   );
@@ -84,8 +91,9 @@ export default function VisceralEquivalents({ gap, patrimony }) {
             Tradução visceral
           </span>
         </div>
-        <h3 className="text-2xl font-bold text-txt-1 mt-2 mb-6">
-          Essa diferença representa, em termos reais
+        <h3 className="text-2xl font-bold text-txt-1 mt-2 mb-6 flex items-center gap-2">
+          <span>Essa diferença representa, em termos reais</span>
+          <InfoTooltip title={TT.visceralGeneral.title} content={TT.visceralGeneral.content} position="bottom" size="md" />
         </h3>
 
         {items.length === 0 ? (
