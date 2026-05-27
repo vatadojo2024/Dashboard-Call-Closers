@@ -143,21 +143,19 @@ export default function App() {
             num={2}
             label="DIAGNÓSTICO HISTÓRICO"
             title="Custo de inação — o que aconteceu nos últimos 10 anos"
-            subtitle="O que aconteceu com o seu dinheiro quando você tira o véu do real e olha em moeda forte."
-            quote="Renda fixa brasileira é apenas renda fixa em real. Quando você dolariza, vira uma perda fixa silenciosa."
+            subtitle="O que aconteceu com o seu dinheiro quando a régua deixa de ser o nominal e passa a ser o poder de compra real."
+            quote="Renda fixa não é segura. É lenta. E lentidão, com a inflação real correndo, é perda disfarçada de ganho."
             accent="rose"
             compact
           />
           <div className="max-w-[1480px] mx-auto px-4 md:px-6 lg:px-8 space-y-4">
             <TimelineChart
-              inputs={inputs}
-              currencyView={inputs.currencyView}
               patrimony={patrimony}
               distribution={distribution}
             />
             <ComparisonCards />
             <InflationChart />
-            <FixedIncomeBRChart />
+            <FixedIncomeBRChart patrimony={patrimony} distribution={distribution} />
             <RealEstateChart />
             <Magnificent7Chart />
           </div>

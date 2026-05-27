@@ -123,6 +123,28 @@ export const INFLACAO_REAL_VATA = {
 };
 
 /**
+ * V1.8 — Índice Vata de Inflação Real — série ano-a-ano (estimada).
+ * Ponderação dos IPCA-grupos do IBGE pela cesta HNWI. Valores estimados a
+ * partir dos pesos da cesta Vata aplicados aos grupos de IPCA, com refinos
+ * para os anos de stress cambial (2020, 2021, 2024).
+ *
+ * Usado por engine.anosDePerdaReal() para identificar anos em que a
+ * rentabilidade nominal da renda fixa BR ficou abaixo da inflação real.
+ */
+export const INFLACAO_REAL_VATA_ANUAL = {
+  2016: 0.078,
+  2017: 0.042,
+  2018: 0.051,
+  2019: 0.058,
+  2020: 0.108, // pandemia: dinheiro encolheu
+  2021: 0.118, // ano de disparo
+  2022: 0.072,
+  2023: 0.058,
+  2024: 0.124, // real desvalorizou de novo
+  2025: 0.055,
+};
+
+/**
  * S&P 500 — retorno anual em USD (Total Return, com dividendos reinvestidos).
  * Fonte: S&P Global · RBC Wealth Management.
  * V1.6: 2025 corrigido de 0.10 (estimativa) para 0.179 (fechamento real,

@@ -7,6 +7,7 @@ import {
   YEARS, USD_BRL, RFBR_BRL, RFBR_USD, IBOV, FIPEZAP, SP500, MAG7_CAGR,
   CDI, ASSET_CLASS_RETURNS, INSTITUTIONAL_PORTFOLIO_RETURN,
   PREMISE_MULTIPLIERS, VISCERAL_DIVISORS, INFLACAO_REAL_VATA,
+  INFLACAO_REAL_VATA_ANUAL,
 } from './data.js';
 
 // ---------- V1.5 Inflação ----------
@@ -404,4 +405,242 @@ export function makeYearMap(years, fn) {
   const m = {};
   years.forEach(y => { m[y] = fn(y); });
   return m;
+}
+
+/* ============================================================
+   V1.8 — Subtração de poder de compra (custo de inação real)
+   Substitui a régua cambial (USD) pela régua do poder de compra
+   real (Índice Vata). Foco: transformar abstração em encolhimento
+   concreto de poder de compra.
+   ============================================================ */
+
+/**
+ * V1.8 — Inflação real acumulada (Índice Vata) sobre a janela [fromYear, toYear].
+ * Aplica a inflação de cada ano em INFLACAO_REAL_VATA_ANUAL inclusive nos dois
+ * extremos (10 multiplicações para 2016-2025). Se a série anual não tiver
+ * cobertura completa da janela, cai num cálculo via CAGR.
+ */
+export function inflacaoRealAcumulada(fromYear, toYear = 2025) {
+  if (toYear < fromYear) return 0;
+  let acum = 1;
+  let usouSerie = true;
+  for (let ano = fromYear; ano <= toYear; ano++) {
+    const taxaAno = INFLACAO_REAL_VATA_ANUAL[ano];
+    if (taxaAno == null) { usouSerie = false; break; }
+    acum *= (1 + taxaAno);
+  }
+  if (usouSerie) return acum - 1;
+  const anos = (toYear - fromYear) + 1;
+  return Math.pow(1 + INFLACAO_REAL_VATA.cagr, anos) - 1;
+}
+
+/**
+ * V1.8 — Converte um valor nominal de um ano para o equivalente em
+ * poder de compra de um ano-base (default: 2016).
+ *
+ * Exemplo: paraPoderDeCompra(2_470_000, 2025, 2016) responde "quanto
+ * R$ 2,47 mi de 2025 valem em reais de 2016".
+ */
+export function paraPoderDeCompra(valorNominal, anoNominal, anoBase = 2016) {
+  if (anoNominal <= anoBase) return valorNominal;
+  const inflacao = inflacaoRealAcumulada(anoBase, anoNominal);
+  return valorNominal / (1 + inflacao);
+}
+
+/**
+ * V1.8 — Subtração que dói: aplica a série RFBR_BRL ano-a-ano sobre um
+ * valor inicial e contrasta com o que esse mesmo valor precisaria ser só
+ * para repor a inflação real Vata. Retorna ganho nominal, perda de poder
+ * de compra, saldo real e as proporções para a frase de tradução.
+ */
+export function calcularSubtracaoRendaFixa(valorInicial, anoInicial = 2016, anoFinal = 2025) {
+  let valorNominal = valorInicial;
+  for (let ano = anoInicial; ano <= anoFinal; ano++) {
+    const rentAno = RFBR_BRL[ano] ?? ASSET_CLASS_RETURNS.rfBR;
+    valorNominal *= (1 + rentAno);
+  }
+
+  const ganhoNominal = valorNominal - valorInicial;
+  const inflacaoAcum = inflacaoRealAcumulada(anoInicial, anoFinal);
+  const valorParaManterPoder = valorInicial * (1 + inflacaoAcum);
+  const perdaPoderCompra = valorParaManterPoder - valorInicial;
+  const saldoReal = valorNominal - valorParaManterPoder;
+
+  const proporcaoReposicao = ganhoNominal > 0
+    ? (perdaPoderCompra / ganhoNominal) * 100
+    : 100;
+
+  return {
+    valorInicial,
+    valorNominal,
+    valorParaManterPoder,
+    ganhoNominal,
+    perdaPoderCompra,
+    saldoReal,
+    proporcaoReposicao: Math.min(Math.max(proporcaoReposicao, 0), 100),
+    proporcaoSobra: Math.max(0, Math.min(100, 100 - proporcaoReposicao)),
+    inflacaoAcumulada: inflacaoAcum,
+    isNegativo: saldoReal < 0,
+  };
+}
+
+/**
+ * V1.8 — Mesma subtração para o cenário institucional, usando o retorno
+ * composto da carteira institucional (default: INSTITUTIONAL_PORTFOLIO_RETURN).
+ */
+export function calcularSubtracaoInstitucional(valorInicial, institutionalReturn = INSTITUTIONAL_PORTFOLIO_RETURN, anoInicial = 2016, anoFinal = 2025) {
+  const anos = (anoFinal - anoInicial) + 1;
+  const valorNominal = valorInicial * Math.pow(1 + institutionalReturn, anos);
+  const ganhoNominal = valorNominal - valorInicial;
+
+  const inflacaoAcum = inflacaoRealAcumulada(anoInicial, anoFinal);
+  const valorParaManterPoder = valorInicial * (1 + inflacaoAcum);
+  const perdaPoderCompra = valorParaManterPoder - valorInicial;
+  const saldoReal = valorNominal - valorParaManterPoder;
+
+  return {
+    valorInicial,
+    valorNominal,
+    valorParaManterPoder,
+    ganhoNominal,
+    perdaPoderCompra,
+    saldoReal,
+    inflacaoAcumulada: inflacaoAcum,
+    isNegativo: saldoReal < 0,
+  };
+}
+
+const CONTEXTO_ANOS_PERDA = {
+  2020: 'pandemia: dinheiro encolheu',
+  2021: 'inflação real disparou',
+  2022: 'aperto monetário global',
+  2024: 'real desvalorizou de novo',
+};
+
+/**
+ * V1.8 — Anos em que a renda fixa BR teve poder de compra real NEGATIVO
+ * (rentabilidade nominal < inflação real do ano).
+ */
+export function anosDePerdaReal() {
+  const anosNegativos = [];
+  for (const ano of YEARS) {
+    const rentNominal = RFBR_BRL[ano] ?? 0;
+    const inflacaoAno = INFLACAO_REAL_VATA_ANUAL[ano] ?? INFLACAO_REAL_VATA.cagr;
+    const real = ((1 + rentNominal) / (1 + inflacaoAno)) - 1;
+    if (real < 0) {
+      anosNegativos.push({
+        ano,
+        perda: real * 100,
+        rentNominal,
+        inflacaoAno,
+        contexto: CONTEXTO_ANOS_PERDA[ano] ?? '',
+      });
+    }
+  }
+  return anosNegativos;
+}
+
+/**
+ * V1.8 — Constrói as trajetórias em "reais de hoje" (poder de compra)
+ * para o gráfico de subtração. Cada ponto traz: o valor da renda fixa
+ * BR, o valor institucional e o "break-even" da inflação real, todos em
+ * poder de compra deflacionado pelo Índice Vata ano-a-ano até o anoFinal.
+ *
+ * Saída pronta para Recharts (year, rfBR, institucional, breakEven).
+ */
+/**
+ * V1.8.1 — Perda de poder de compra do lead nos últimos 10 anos.
+ *
+ * Assume o `patrimony` como valor de partida em 2016 e aplica o retorno
+ * ponderado da composição declarada (`leadPortfolioReturn(distribution)`)
+ * ao longo de 10 períodos. Subtrai do valor de manutenção de poder de
+ * compra (mesmo patrimônio inicial corrigido pela inflação real Vata).
+ *
+ * Convenção de sinal:
+ *   valor > 0  → lead venceu a inflação real (ganho de poder de compra)
+ *   valor < 0  → lead perdeu poder de compra real
+ */
+export function calcularPerdaPoderCompra(patrimony, distribution, anoInicial = 2016, anoFinal = 2025) {
+  if (!patrimony || patrimony <= 0) {
+    return { valor: 0, percentual: 0, valorNominalHoje: 0, valorParaManterPoder: 0, isPositivo: false, isNegativo: false };
+  }
+
+  const periodos = (anoFinal - anoInicial) + 1;
+  const rLead = leadPortfolioReturn(distribution);
+  const valorNominalHoje = patrimony * Math.pow(1 + rLead, periodos);
+
+  const inflacaoAcum = inflacaoRealAcumulada(anoInicial, anoFinal);
+  const valorParaManterPoder = patrimony * (1 + inflacaoAcum);
+
+  const valor = valorNominalHoje - valorParaManterPoder;
+  const percentual = (valor / patrimony) * 100;
+
+  return {
+    valor,
+    percentual,
+    valorNominalHoje,
+    valorParaManterPoder,
+    inflacaoAcumulada: inflacaoAcum,
+    isPositivo: valor > 0,
+    isNegativo: valor < 0,
+  };
+}
+
+/**
+ * V1.8.1 — Custo de oportunidade nos últimos 10 anos.
+ *
+ * Compara o patrimônio nominal do lead (mesma composição declarada,
+ * projetada retroativamente) com o patrimônio que ele teria estado
+ * posicionado institucionalmente (mesmas condições iniciais).
+ *
+ * Retorna sempre `valor` positivo (custo) e `percentual` em relação ao
+ * patrimônio nominal do lead (quanto a mais teria, em proporção).
+ */
+export function calcularCustoOportunidade(patrimony, distribution, institutionalReturn = INSTITUTIONAL_PORTFOLIO_RETURN, anoInicial = 2016, anoFinal = 2025) {
+  if (!patrimony || patrimony <= 0) {
+    return { valor: 0, percentual: 0, valorLead: 0, valorInst: 0 };
+  }
+
+  const periodos = (anoFinal - anoInicial) + 1;
+  const rLead = leadPortfolioReturn(distribution);
+  const valorLead = patrimony * Math.pow(1 + rLead, periodos);
+  const valorInst = patrimony * Math.pow(1 + institutionalReturn, periodos);
+
+  const valor = valorInst - valorLead;
+  const percentual = valorLead > 0 ? (valor / valorLead) * 100 : 0;
+
+  return {
+    valor,
+    percentual,
+    valorLead,
+    valorInst,
+  };
+}
+
+export function buildPurchasingPowerSeries(valorInicial, institutionalReturn = INSTITUTIONAL_PORTFOLIO_RETURN, anoInicial = 2016, anoFinal = 2025) {
+  // Ponto 0 = "antes de aplicar qualquer retorno": valor inicial, sem inflação ainda
+  const series = [{
+    year: String(anoInicial - 1),
+    rfBR: valorInicial,
+    institucional: valorInicial,
+    breakEven: valorInicial,
+  }];
+
+  let valorRF = valorInicial;
+  for (let ano = anoInicial; ano <= anoFinal; ano++) {
+    const rentAno = RFBR_BRL[ano] ?? ASSET_CLASS_RETURNS.rfBR;
+    valorRF *= (1 + rentAno);
+    const periodos = (ano - anoInicial) + 1;
+    const valorInst = valorInicial * Math.pow(1 + institutionalReturn, periodos);
+    const inflAcum = inflacaoRealAcumulada(anoInicial, ano);
+    const valorBreakEven = valorInicial * (1 + inflAcum);
+
+    series.push({
+      year: String(ano),
+      rfBR: valorRF,
+      institucional: valorInst,
+      breakEven: valorBreakEven,
+    });
+  }
+  return series;
 }
